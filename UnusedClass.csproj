@@ -35,6 +35,9 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Dsl">
+      <HintPath>dep\Dsl.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CodeAnalysis">
       <HintPath>dep\Microsoft.CodeAnalysis.dll</HintPath>
     </Reference>
@@ -54,8 +57,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Code\Config.cs" />
     <Compile Include="Code\CSharpCodeWalker.cs" />
     <Compile Include="Code\CSharpProject.cs" />
+    <Compile Include="Code\SymbolInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -15,68 +15,71 @@ namespace RoslynTool
         public override void VisitClassDeclaration(ClassDeclarationSyntax node)
         {
             var sym = m_Model.GetDeclaredSymbol(node);
+            var fullName = SymbolInfo.CalcFullName(sym, true);
             var baseSym = sym.BaseType;
+            if(Config.CanCollect(fullName, baseSym.Name, sym.AllInterfaces)) {
+                m_Identifiers[fullName] = string.Empty;
+            }
+            /*
             if (null != baseSym && (baseSym.Name == "IJceMessage" || baseSym.Name == "ICs2LuaJceMessage")) {
-                m_Identifiers[sym.Name] = false;
+                //m_Identifiers[fullName] = string.Empty;
+            } else {
+                m_Identifiers[fullName] = string.Empty;
             }
             foreach (var intf in sym.AllInterfaces) {
                 if (intf.Name == "IJceMessage" || intf.Name == "ICs2LuaJceMessage") {
-                    m_Identifiers[sym.Name] = false;
+                    //m_Identifiers[fullName] = string.Empty;
+                } else {
+                    m_Identifiers[fullName] = string.Empty;
                 }
             }
+            */
             base.VisitClassDeclaration(node);
         }
 
-        public CSharpCodeCollecter(SemanticModel model, Dictionary<string, bool> identifiers)
+        public CSharpCodeCollecter(SemanticModel model, Dictionary<string, string> identifiers)
         {
             m_Model = model;
             m_Identifiers = identifiers;
         }
 
         private SemanticModel m_Model = null;
-        private Dictionary<string, bool> m_Identifiers = null;
+        private Dictionary<string, string> m_Identifiers = null;
     }
-    internal class CSharpCodeVerifier : CSharpSyntaxWalker
+    internal class CSharpCodeMarker : CSharpSyntaxWalker
     {
         public override void VisitClassDeclaration(ClassDeclarationSyntax node)
         {
-            bool skip = false;
             var sym = m_Model.GetDeclaredSymbol(node);
-            var baseSym = sym.BaseType;
-            if (null != baseSym && (baseSym.Name == "IJceMessage" || baseSym.Name == "ICs2LuaJceMessage")) {
-                skip = true;
-            }
-            foreach (var intf in sym.AllInterfaces) {
-                if (intf.Name == "IJceMessage" || intf.Name == "ICs2LuaJceMessage") {
-                    skip = true;
-                }
-            }
-            if (skip)
-                m_Skip = true;
+            var fullName = SymbolInfo.CalcFullName(sym, true);
+            m_ClassStack.Push(fullName);
             base.VisitClassDeclaration(node);
-            if(skip)
-                m_Skip = false;
+            m_ClassStack.Pop();
         }
         public override void VisitIdentifierName(IdentifierNameSyntax node)
         {
-            if (m_Skip) {
-            }
-            else {
-                var name = node.Identifier.Text;
-                if (m_Identifiers.ContainsKey(name)) {
-                    m_Identifiers[name] = true;
+            if (m_ClassStack.Count > 0) {
+                var curClassName = m_ClassStack.Peek();
+                var symInfo = m_Model.GetSymbolInfo(node);
+                var sym = symInfo.Symbol as INamedTypeSymbol;
+                if (null != sym) {
+                    var name = SymbolInfo.CalcFullName(sym, true);
+                    //name != MessageDefine.Cs2LuaMessageEnum2Object
+                    if (Config.CanMark(name) && curClassName != name && m_Identifiers.ContainsKey(name)) {
+                        m_Identifiers[name] = curClassName + ":" + node.GetLocation().GetLineSpan().ToString();
+                    }
                 }
             }
             base.VisitIdentifierName(node);
         }
-        public CSharpCodeVerifier(SemanticModel model, Dictionary<string, bool> identifiers)
+        public CSharpCodeMarker(SemanticModel model, Dictionary<string, string> identifiers)
         {
             m_Model = model;
             m_Identifiers = identifiers;
         }
 
         private SemanticModel m_Model = null;
-        private Dictionary<string, bool> m_Identifiers = null;
-        private bool m_Skip = false;
+        private Dictionary<string, string> m_Identifiers = null;
+        private Stack<string> m_ClassStack = new Stack<string>();
     }
 }

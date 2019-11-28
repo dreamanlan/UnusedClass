@@ -210,8 +210,13 @@ namespace RoslynTool
                 refs.Add(MetadataReference.CreateFromFile(fullPath, new MetadataReferenceProperties(MetadataImageKind.Assembly, arr)));
             }
 
+            Config.ReadConfig();
+            var identifiers = new Dictionary<string, string>();
+            foreach(var str in Config.AddClassesConfig) {
+                identifiers[str] = string.Empty;
+            }
+
             bool haveSemanticError = false;
-            var identifiers = new Dictionary<string, bool>();
             CSharpCompilationOptions compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
             compilationOptions = compilationOptions.WithAssemblyIdentityComparer(DesktopAssemblyIdentityComparer.Default);
             compilationOptions = compilationOptions.WithAllowUnsafe(true);
@@ -254,11 +259,15 @@ namespace RoslynTool
                         collector.Visit(tree.GetRoot());
                     }
 
+                    foreach(var str in Config.RemoveClassesConfig) {
+                        identifiers.Remove(str);
+                    }
+
                     foreach (var pair in trees) {
                         SyntaxTree tree = pair.Value;
                         var model = compilation.GetSemanticModel(tree, true);
 
-                        CSharpCodeVerifier verifier = new CSharpCodeVerifier(model, identifiers);
+                        CSharpCodeMarker verifier = new CSharpCodeMarker(model, identifiers);
                         verifier.Visit(tree.GetRoot());
                     }
                 }
