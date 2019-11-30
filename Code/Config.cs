@@ -11,15 +11,21 @@ namespace RoslynTool
 {
     internal static class Config
     {
+        internal static bool CollectClass
+        {
+            get { return s_CollectClass; }
+        }
+        internal static bool CollectField
+        {
+            get { return s_CollectField; }
+        }
         internal static HashSet<string> AddClassesConfig
         {
             get { return s_AddClassesConfig; }
-            set { s_AddClassesConfig = value; }
         }
         internal static HashSet<string> RemoveClassesConfig
         {
             get { return s_RemoveClassesConfig; }
-            set { s_RemoveClassesConfig = value; }
         }
         internal static bool CanCollect(string className, string baseName, System.Collections.Immutable.ImmutableArray<INamedTypeSymbol> interfaces)
         {
@@ -96,6 +102,24 @@ namespace RoslynTool
                     }
                     info.CachedNotIncludes.Add(className);
                 }
+            }
+            return false;
+        }
+        internal static bool NeedLog(string name)
+        {
+            foreach(var list in s_LogConfigs) {
+                bool match = true;
+                int start = 0;
+                foreach(var key in list) {
+                    int ix = name.IndexOf(key, start, StringComparison.CurrentCultureIgnoreCase);
+                    if (ix < 0) {
+                        match = false;
+                        break;
+                    }
+                    start = ix + key.Length;
+                }
+                if (match)
+                    return true;
             }
             return false;
         }
@@ -181,6 +205,46 @@ namespace RoslynTool
                             var className = line.Trim();
                             if (!s_RemoveClassesConfig.Contains(className))
                                 s_RemoveClassesConfig.Add(className);
+                        }
+                    }
+                }
+            }
+            else if (id == "log") {
+                var f = info.First;
+                if (null != f) {
+                    var list = new List<string>();
+                    foreach (var p in f.Call.Params) {
+                        var str = p.GetId();
+                        list.Add(str);
+                    }
+                    foreach (var s in f.Statements) {
+                        var str = s.GetId();
+                        list.Add(str);
+                    }
+                    s_LogConfigs.Add(list);
+                }
+            }
+            else if (id == "collect") {
+                var f = info.First;
+                if (null != f) {
+                    s_CollectClass = false;
+                    s_CollectField = false;
+                    foreach (var p in f.Call.Params) {
+                        var str = p.GetId();
+                        if (str == "class") {
+                            s_CollectClass = true;
+                        }
+                        else if (str == "field") {
+                            s_CollectField = true;
+                        }
+                    }
+                    foreach (var s in f.Statements) {
+                        var str = s.GetId();
+                        if (str == "class") {
+                            s_CollectClass = true;
+                        }
+                        else if (str == "field") {
+                            s_CollectField = true;
                         }
                     }
                 }
@@ -311,5 +375,8 @@ namespace RoslynTool
         private static HashSet<string> s_RemoveClassesConfig = new HashSet<string>();
         private static List<CollecterOrMarkerConfig> s_CollecterConfigs = new List<CollecterOrMarkerConfig>();
         private static List<CollecterOrMarkerConfig> s_MarkerConfigs = new List<CollecterOrMarkerConfig>();
+        private static List<List<string>> s_LogConfigs = new List<List<string>>();
+        private static bool s_CollectClass = true;
+        private static bool s_CollectField = true;
     }
 }

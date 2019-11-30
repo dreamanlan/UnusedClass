@@ -12,17 +12,12 @@ namespace RoslynTool
 {
     internal static class SymbolInfo
     {
-        internal static string CalcFullName(ISymbol type, bool includeSelfName)
+        internal static string CalcFullName(ISymbol type)
         {
             if (null == type)
                 return string.Empty;
-            while (null != type && null != type.OriginalDefinition && type != type.OriginalDefinition) {
-                type = type.OriginalDefinition;
-            }
             List<string> list = new List<string>();
-            if (includeSelfName) {
-                list.Add(CalcNameWithTypeParameters(type));
-            }
+            list.Add(CalcNameWithTypeParameters(type));
             INamespaceSymbol ns = type.ContainingNamespace;
             var ct = type.ContainingType;
             string name = string.Empty;
@@ -63,6 +58,9 @@ namespace RoslynTool
         {
             if (null == type)
                 return string.Empty;
+            while (null != type && null != type.OriginalDefinition && type != type.OriginalDefinition) {
+                type = type.OriginalDefinition;
+            }
             List<string> list = new List<string>();
             list.Add(type.Name);
             foreach (var param in type.TypeParameters) {
