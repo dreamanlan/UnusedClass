@@ -140,112 +140,97 @@ namespace RoslynTool
                 }
             }
         }
-        private static void ReadConfig(Dsl.DslInfo info)
+        private static void ReadConfig(Dsl.ISyntaxComponent info)
         {
-            string id = info.GetId();
+            var f = info as Dsl.FunctionData;
+            if (null == f)
+                return;
+            string id = f.GetId();
             if (id == "collecter") {
                 var cfg = new CollecterOrMarkerConfig();
-                var f = info.First;
-                if (null != f) {
-                    foreach (var s in f.Statements) {
-                        ReadCollecterOrMarkerConfig(s, cfg);
-                    }
+                foreach (var s in f.Statements) {
+                    ReadCollecterOrMarkerConfig(s, cfg);
                 }
                 s_CollecterConfigs.Add(cfg);
             }
             else if (id == "marker") {
                 var cfg = new CollecterOrMarkerConfig();
-                var f = info.First;
-                if (null != f) {
-                    foreach (var s in f.Statements) {
-                        ReadCollecterOrMarkerConfig(s, cfg);
-                    }
+                foreach (var s in f.Statements) {
+                    ReadCollecterOrMarkerConfig(s, cfg);
                 }
                 s_MarkerConfigs.Add(cfg);
             }
             else if (id == "addclasses") {
-                var f = info.First;
-                if (null != f) {
-                    foreach (var p in f.Call.Params) {
-                        var str = p.GetId();
-                        var lines = File.ReadAllLines(str);
-                        foreach (var line in lines) {
-                            var className = line.Trim();
-                            if (!s_AddClassesConfig.Contains(className))
-                                s_AddClassesConfig.Add(className);
-                        }
+                foreach (var p in f.Call.Params) {
+                    var str = p.GetId();
+                    var lines = File.ReadAllLines(str);
+                    foreach (var line in lines) {
+                        var className = line.Trim();
+                        if (!s_AddClassesConfig.Contains(className))
+                            s_AddClassesConfig.Add(className);
                     }
-                    foreach (var s in f.Statements) {
-                        var str = s.GetId();
-                        var lines = File.ReadAllLines(str);
-                        foreach (var line in lines) {
-                            var className = line.Trim();
-                            if (!s_AddClassesConfig.Contains(className))
-                                s_AddClassesConfig.Add(className);
-                        }
+                }
+                foreach (var s in f.Statements) {
+                    var str = s.GetId();
+                    var lines = File.ReadAllLines(str);
+                    foreach (var line in lines) {
+                        var className = line.Trim();
+                        if (!s_AddClassesConfig.Contains(className))
+                            s_AddClassesConfig.Add(className);
                     }
                 }
             }
             else if (id == "removeclasses") {
-                var f = info.First;
-                if (null != f) {
-                    foreach (var p in f.Call.Params) {
-                        var str = p.GetId();
-                        var lines = File.ReadAllLines(str);
-                        foreach (var line in lines) {
-                            var className = line.Trim();
-                            if (!s_RemoveClassesConfig.Contains(className))
-                                s_RemoveClassesConfig.Add(className);
-                        }
+                foreach (var p in f.Call.Params) {
+                    var str = p.GetId();
+                    var lines = File.ReadAllLines(str);
+                    foreach (var line in lines) {
+                        var className = line.Trim();
+                        if (!s_RemoveClassesConfig.Contains(className))
+                            s_RemoveClassesConfig.Add(className);
                     }
-                    foreach (var s in f.Statements) {
-                        var str = s.GetId();
-                        var lines = File.ReadAllLines(str);
-                        foreach (var line in lines) {
-                            var className = line.Trim();
-                            if (!s_RemoveClassesConfig.Contains(className))
-                                s_RemoveClassesConfig.Add(className);
-                        }
+                }
+                foreach (var s in f.Statements) {
+                    var str = s.GetId();
+                    var lines = File.ReadAllLines(str);
+                    foreach (var line in lines) {
+                        var className = line.Trim();
+                        if (!s_RemoveClassesConfig.Contains(className))
+                            s_RemoveClassesConfig.Add(className);
                     }
                 }
             }
             else if (id == "log") {
-                var f = info.First;
-                if (null != f) {
-                    var list = new List<string>();
-                    foreach (var p in f.Call.Params) {
-                        var str = p.GetId();
-                        list.Add(str);
-                    }
-                    foreach (var s in f.Statements) {
-                        var str = s.GetId();
-                        list.Add(str);
-                    }
-                    s_LogConfigs.Add(list);
+                var list = new List<string>();
+                foreach (var p in f.Call.Params) {
+                    var str = p.GetId();
+                    list.Add(str);
                 }
+                foreach (var s in f.Statements) {
+                    var str = s.GetId();
+                    list.Add(str);
+                }
+                s_LogConfigs.Add(list);
             }
             else if (id == "collect") {
-                var f = info.First;
-                if (null != f) {
-                    s_CollectClass = false;
-                    s_CollectField = false;
-                    foreach (var p in f.Call.Params) {
-                        var str = p.GetId();
-                        if (str == "class") {
-                            s_CollectClass = true;
-                        }
-                        else if (str == "field") {
-                            s_CollectField = true;
-                        }
+                s_CollectClass = false;
+                s_CollectField = false;
+                foreach (var p in f.Call.Params) {
+                    var str = p.GetId();
+                    if (str == "class") {
+                        s_CollectClass = true;
                     }
-                    foreach (var s in f.Statements) {
-                        var str = s.GetId();
-                        if (str == "class") {
-                            s_CollectClass = true;
-                        }
-                        else if (str == "field") {
-                            s_CollectField = true;
-                        }
+                    else if (str == "field") {
+                        s_CollectField = true;
+                    }
+                }
+                foreach (var s in f.Statements) {
+                    var str = s.GetId();
+                    if (str == "class") {
+                        s_CollectClass = true;
+                    }
+                    else if (str == "field") {
+                        s_CollectField = true;
                     }
                 }
             }
