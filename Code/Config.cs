@@ -148,30 +148,21 @@ namespace RoslynTool
             string id = f.GetId();
             if (id == "collecter") {
                 var cfg = new CollecterOrMarkerConfig();
-                foreach (var s in f.Statements) {
+                foreach (var s in f.Params) {
                     ReadCollecterOrMarkerConfig(s, cfg);
                 }
                 s_CollecterConfigs.Add(cfg);
             }
             else if (id == "marker") {
                 var cfg = new CollecterOrMarkerConfig();
-                foreach (var s in f.Statements) {
+                foreach (var s in f.Params) {
                     ReadCollecterOrMarkerConfig(s, cfg);
                 }
                 s_MarkerConfigs.Add(cfg);
             }
-            else if (id == "addclasses") {
-                foreach (var p in f.Call.Params) {
+            else if (id == "addclasses") {                
+                foreach (var p in f.Params) {
                     var str = p.GetId();
-                    var lines = File.ReadAllLines(str);
-                    foreach (var line in lines) {
-                        var className = line.Trim();
-                        if (!s_AddClassesConfig.Contains(className))
-                            s_AddClassesConfig.Add(className);
-                    }
-                }
-                foreach (var s in f.Statements) {
-                    var str = s.GetId();
                     var lines = File.ReadAllLines(str);
                     foreach (var line in lines) {
                         var className = line.Trim();
@@ -181,17 +172,8 @@ namespace RoslynTool
                 }
             }
             else if (id == "removeclasses") {
-                foreach (var p in f.Call.Params) {
+                foreach (var p in f.Params) {
                     var str = p.GetId();
-                    var lines = File.ReadAllLines(str);
-                    foreach (var line in lines) {
-                        var className = line.Trim();
-                        if (!s_RemoveClassesConfig.Contains(className))
-                            s_RemoveClassesConfig.Add(className);
-                    }
-                }
-                foreach (var s in f.Statements) {
-                    var str = s.GetId();
                     var lines = File.ReadAllLines(str);
                     foreach (var line in lines) {
                         var className = line.Trim();
@@ -202,12 +184,8 @@ namespace RoslynTool
             }
             else if (id == "log") {
                 var list = new List<string>();
-                foreach (var p in f.Call.Params) {
+                foreach (var p in f.Params) {
                     var str = p.GetId();
-                    list.Add(str);
-                }
-                foreach (var s in f.Statements) {
-                    var str = s.GetId();
                     list.Add(str);
                 }
                 s_LogConfigs.Add(list);
@@ -215,17 +193,8 @@ namespace RoslynTool
             else if (id == "collect") {
                 s_CollectClass = false;
                 s_CollectField = false;
-                foreach (var p in f.Call.Params) {
+                foreach (var p in f.Params) {
                     var str = p.GetId();
-                    if (str == "class") {
-                        s_CollectClass = true;
-                    }
-                    else if (str == "field") {
-                        s_CollectField = true;
-                    }
-                }
-                foreach (var s in f.Statements) {
-                    var str = s.GetId();
                     if (str == "class") {
                         s_CollectClass = true;
                     }
@@ -237,24 +206,18 @@ namespace RoslynTool
         }
         private static void ReadCollecterOrMarkerConfig(Dsl.ISyntaxComponent comp, CollecterOrMarkerConfig cfg)
         {
-            var cd = comp as Dsl.CallData;
-            if (null != cd) {
-                ReadCollecterOrMarkerConfig(cd, cfg);
+            var fd = comp as Dsl.FunctionData;
+            if (null != fd) {
+                ReadCollecterOrMarkerConfig(fd, cfg);
             }
             else {
-                var fd = comp as Dsl.FunctionData;
-                if (null != fd) {
-                    ReadCollecterOrMarkerConfig(fd, cfg);
-                }
-                else {
-                    var sd = comp as Dsl.StatementData;
-                    if (null != sd) {
-                        ReadCollecterOrMarkerConfig(sd, cfg);
-                    }
+                var sd = comp as Dsl.StatementData;
+                if (null != sd) {
+                    ReadCollecterOrMarkerConfig(sd, cfg);
                 }
             }
         }
-        private static string ReadCollecterOrMarkerConfig(Dsl.CallData cd, CollecterOrMarkerConfig cfg)
+        private static string ReadCollecterOrMarkerConfig(Dsl.FunctionData cd, CollecterOrMarkerConfig cfg)
         {
             var id = cd.GetId();
             if (id == "base") {
@@ -292,44 +255,6 @@ namespace RoslynTool
                 }
             }
             return id;
-        }
-        private static void ReadCollecterOrMarkerConfig(Dsl.FunctionData fd, CollecterOrMarkerConfig cfg)
-        {
-            var id = ReadCollecterOrMarkerConfig(fd.Call, cfg);
-            if (id == "base") {
-                foreach (var s in fd.Statements) {
-                    cfg.Bases.Add(s.GetId());
-                }
-            }
-            else if (id == "interface") {
-                foreach (var s in fd.Statements) {
-                    cfg.Interfaces.Add(s.GetId());
-                }
-            }
-            else if (id == "include") {
-                foreach (var s in fd.Statements) {
-                    cfg.Includes.Add(s.GetId());
-                }
-            }
-            else if (id == "match") {
-                foreach (var s in fd.Statements) {
-                    var str = s.GetId();
-                    var regex = new Regex(str, RegexOptions.Compiled);
-                    cfg.Matches.Add(regex);
-                }
-            }
-            else if (id == "except") {
-                foreach (var s in fd.Statements) {
-                    cfg.Excepts.Add(s.GetId());
-                }
-            }
-            else if (id == "exceptmatch") {
-                foreach (var s in fd.Statements) {
-                    var str = s.GetId();
-                    var regex = new Regex(str, RegexOptions.Compiled);
-                    cfg.ExceptMatches.Add(regex);
-                }
-            }
         }
         private static void ReadCollecterOrMarkerConfig(Dsl.StatementData sd, CollecterOrMarkerConfig cfg)
         {
